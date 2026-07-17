@@ -1,0 +1,19 @@
+baseURL = "https://kant21.spdns.eu/refit-blog/"
+languageCode = "de-de"
+title = "refit-blog"
+theme = "PaperMod"
+canonifyURLs = true
+
+[params]
+  env = "production"
+  description = "Erfahrungsberichte aus dem Homelab: alte Hardware reaktivieren, NAS-Recovery und mehr."
+  ShowReadingTime = true
+  ShowPostNavLinks = true
+  ShowShareButtons = false
+  ShowBreadCrumbs = true
+  ShowCodeCopyButtons = true
+
+[[menu.main]]
+  name = "Archiv"
+  url = "/posts/"
+  weight = 10
