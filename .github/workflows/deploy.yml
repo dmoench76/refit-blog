@@ -16,11 +16,13 @@ jobs:
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v3
         with:
-          hugo-version: 'latest'
+          hugo-version: '0.164.0'
           extended: true
 
       - name: Build
         run: hugo --minify
 
       - name: Deploy (local copy)
-        run: rsync -a --delete public/ /srv/refit-blog/public/
+        run: |
+          test -f public/index.html
+          rsync -a --delete public/ /srv/refit-blog/public/

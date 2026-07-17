@@ -1,5 +1,9 @@
 # refit-blog: Erfahrungsberichte-Blog für Homelab-Projekte
 
+> **Hinweis (as-built):** Die tatsächliche Umsetzung weicht in zwei Punkten von diesem Dokument ab — Details und Begründung im Implementierungsplan (`docs/superpowers/plans/2026-07-17-refit-blog.md`):
+> 1. Deploy erfolgt über einen self-hosted GitHub-Actions-Runner direkt auf dmoench-dell (lokale Dateikopie) statt über SSH/rsync vom GitHub-gehosteten Runner aus — Letzteres kann das private LAN nicht erreichen.
+> 2. Der Reverse-Proxy-Block auf kant21 liegt in `nextcloud.conf`, nicht `kant21-ssl.conf` (letztere ist ein separates, LAN-only Admin-Vhost).
+
 ## Zweck
 
 Öffentlicher Blog für Erfahrungsberichte aus Homelab-/Hardware-Projekten (NAS-Recovery,

@@ -1,5 +1,6 @@
 baseURL = "https://kant21.spdns.eu/refit-blog/"
 languageCode = "de-de"
+defaultContentLanguage = "de"
 title = "refit-blog"
 theme = "PaperMod"
 canonifyURLs = true
