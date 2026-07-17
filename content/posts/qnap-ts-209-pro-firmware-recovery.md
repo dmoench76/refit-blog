@@ -53,8 +53,7 @@ Bemerkenswerte Randnotiz aus diesem Versuch: Ein direkter
 `apt-get install wine64:amd64` auf dem produktiv laufenden Host wurde vom
 Paketmanager selbst verweigert (Abhängigkeitskonflikte), bevor irgendetwas
 verändert wurde – der anschließende Versuch lief stattdessen isoliert in
-einem Docker-Container, um das Live-System (Nginx, Datenbank, weitere
-Dienste) nicht zu gefährden. Am Ende halfen weder das noch weitere
+einem Docker-Container. Am Ende halfen weder das noch weitere
 Debugging-Versuche – die Entscheidung fiel, stattdessen eine echte
 Windows-Maschine zu organisieren.
 
