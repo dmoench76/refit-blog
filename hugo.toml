@@ -12,6 +12,11 @@ canonifyURLs = true
   ShowShareButtons = false
   ShowBreadCrumbs = true
   ShowCodeCopyButtons = true
+  giscusRepo = "dmoench76/refit-blog"
+  giscusRepoID = "R_kgDOTbYZ4A"
+  giscusCategory = "General"
+  giscusCategoryID = "DIC_kwDOTbYZ4M4DBYe1"
+  comments = true
 
 [[menu.main]]
   name = "Archiv"
