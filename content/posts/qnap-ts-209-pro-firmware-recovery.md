@@ -39,11 +39,12 @@ gesorgt (siehe unten).
 
 ## Sackgasse 2: Qfinder Pro unter Wine/Box64
 
-QNAPs eigenes Tool zum Aufspielen der Firmware, Qfinder Pro, gibt es nur
-für Windows/macOS/x86-Linux – nicht für ARM. Der Versuch, die alte Windows-
-Version unter Wine mit Box64/Box32-Emulation auf einem ARM64-System zum
-Laufen zu bringen, endete an einer harten Wand: `wineboot.exe` scheiterte
-mit `STATUS_INVALID_IMAGE_FORMAT` (`c000007b`), verursacht durch
+QNAPs eigenes Tool zum Aufspielen der Firmware, Qfinder Pro, gibt es offiziell
+für Windows, macOS und Ubuntu Desktop (18.04+, 32- und 64-Bit) – aber nur für
+x86/x64, keine ARM-Version. Genau das war das Problem: Der Zielhost lief auf
+ARM64, also blieb erstmal nur der Umweg über die Windows-Version unter Wine
+mit Box64/Box32-Emulation. Dieser Versuch endete an einer harten Wand:
+`wineboot.exe` scheiterte mit `STATUS_INVALID_IMAGE_FORMAT` (`c000007b`), verursacht durch
 ungelöste Box32-Symbole (u. a. `arc4random`, `strtold`,
 `FT_Get_Transform`, `FcFontSetList`) – ein bekanntes, offenes Problem im
 Box64-Projekt, kein Konfigurationsfehler unsererseits.
