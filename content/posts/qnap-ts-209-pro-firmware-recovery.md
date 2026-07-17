@@ -1,23 +1,28 @@
 ---
-title: "QNAP TS-209 Pro: Ein NAS von 2008 wieder zum Laufen bringen"
+title: "Ein neues Leben für ein QNAP TS-209 Pro"
 date: 2026-07-17T13:00:00+02:00
 draft: false
 ---
 
-Ein altes, ungenutztes QNAP TS-209 Pro tauchte im Netzwerk auf – ein
-2-Bay-NAS aus der Generation 2008. Ziel: wieder lauffähig machen. Was auf
-dem Papier nach "Firmware neu aufspielen" klang, wurde zu einer Tour durch
+Nachbarn haben mir ein QNAP TS-209 Pro überlassen, das nach einem
+fehlgeschlagenen Firmware-Update nicht mehr funktionierte. Es hatte schon
+eine ganze Weile nur noch in der Ecke gestanden – ein 2-Bay-NAS aus der
+Generation 2008, für das sich sonst niemand mehr zuständig fühlte. Die
+Teile sind aber ganz brauchbar und viel zu schade zum Wegwerfen, also habe
+ich es mitgenommen mit dem Ziel: wieder lauffähig machen. Was auf dem
+Papier nach "Firmware neu aufspielen" klang, wurde zu einer Tour durch
 tote FTP-Zugänge, falsche Firmware-Formate und eine Emulationssackgasse.
 Hier die Kurzfassung für alle, die vor demselben Gerät stehen.
 
 ## Ausgangslage
 
-Platten eingebaut, Gerät gestartet – aber ohne funktionierende Standard-
-Initialisierung über die Weboberfläche kam man nicht weiter. Über die
-Shell ließ sich das NAS manuell mit den Bordmitteln des Herstellers
-(`init_single_disk`, `config_util`, `storage_boot_init`) im
-Single-Disk-Betrieb initialisieren – ohne RAID, mit nur einer Platte
-bestückt.
+Ein fehlgeschlagenes Firmware-Update hatte das System-Image zerschossen –
+das Gerät bootete zwar noch bis zu einem gewissen Punkt, aber ohne
+funktionierende Standard-Initialisierung über die Weboberfläche kam man
+nicht weiter. Über die Shell ließ sich das NAS manuell mit den
+Bordmitteln des Herstellers (`init_single_disk`, `config_util`,
+`storage_boot_init`) im Single-Disk-Betrieb initialisieren – ohne RAID,
+mit nur einer Platte bestückt.
 
 Damit war das Gerät zwar am Leben, aber ohne aktuelle, funktionierende
 QTS-Firmware nicht sinnvoll nutzbar. Also: Firmware besorgen.
