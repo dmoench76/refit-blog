@@ -315,11 +315,11 @@ Expected: `$RRSYNC_PATH` prints a path such as `/usr/bin/rrsync`; the ssh comman
 ssh -i /tmp/refit-blog-deploy-key dmoench-dell "whoami" 2>&1
 ```
 
-Expected: an error/rejection (NOT `dmoench`) since the `command=` restriction overrides any command the client requests — this confirms the restriction is active. Then verify rsync itself works:
+Expected: an error/rejection (NOT `dmoench`) since the `command=` restriction overrides any command the client requests — this confirms the restriction is active. Then verify rsync itself works. Use a bare `dmoench-dell:` destination with **no path after the colon** — `rrsync -wo /srv/refit-blog/public/` already anchors the session there and re-prepends that directory to any absolute path the client sends, so repeating the full path doubles it up and fails with a nested-mkdir error:
 
 ```bash
 echo "test" > /tmp/rsync-test.txt
-rsync -avz -e "ssh -i /tmp/refit-blog-deploy-key" /tmp/rsync-test.txt dmoench-dell:/srv/refit-blog/public/
+rsync -avz -e "ssh -i /tmp/refit-blog-deploy-key" /tmp/rsync-test.txt dmoench-dell:
 ssh dmoench-dell "cat /srv/refit-blog/public/rsync-test.txt"
 ```
 
@@ -393,6 +393,8 @@ Expected: file is removed. Keep `/tmp/refit-blog-deploy-key.pub` for reference o
 
 - [ ] **Step 3: Write the workflow file**
 
+The deploy key installed in Task 4 is restricted via `rrsync -wo /srv/refit-blog/public/`, which anchors and re-prepends that directory itself. Task 4's verification found that passing any path after the host (e.g. `dmoench-dell:/srv/refit-blog/public/`) doubles the path and fails with a nested-mkdir error — the correct destination is a **bare `host:` with no path**, relying on the key's built-in restriction to anchor the write. Third-party rsync-deploy GitHub Actions (e.g. `burnett01/rsync-deployments`) require a non-empty `remote_path` input, which would reintroduce this bug — so this step invokes `rsync` directly instead, giving full control over the destination argument.
+
 Create `~/refit-blog/.github/workflows/deploy.yml`:
 
 ```yaml
@@ -421,15 +423,19 @@ jobs:
         run: hugo --minify
 
       - name: Deploy via rsync
-        uses: burnett01/rsync-deployments@7.0.2
-        with:
-          switches: -avzr --delete
-          path: public/
-          remote_path: /srv/refit-blog/public/
-          remote_host: ${{ secrets.DEPLOY_HOST }}
-          remote_user: ${{ secrets.DEPLOY_USER }}
-          remote_key: ${{ secrets.DEPLOY_SSH_KEY }}
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          install -m 600 -D /dev/null ~/.ssh/deploy_key
+          echo "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          rsync -avz --delete -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes" \
+            public/ "$DEPLOY_USER@$DEPLOY_HOST:"
 ```
+
+Note the trailing colon with nothing after it on the destination (`"$DEPLOY_USER@$DEPLOY_HOST:"`) — this is required by the rrsync restriction, not an omission. The trailing slash on the source (`public/`) means rsync copies the *contents* of `public/` rather than the directory itself, matching the plain-file layout `/srv/refit-blog/public/` already has.
 
 - [ ] **Step 4: Commit and push to trigger the first automated deploy**
 
