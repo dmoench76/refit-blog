@@ -132,7 +132,7 @@ Recovery-Zweck. Ein bisschen Foren-Archäologie und ein echtes
 Windows-System für die herstellereigenen Tools waren am Ende
 zielführender als jeder Emulationsversuch.
 
-## Offene Frage: Alternative Firmware oder echtes Linux?
+## Und jetzt?
 
 Die originale QTS-Firmware läuft jetzt – aber das ist nur die halbe
 Miete für so alte Hardware. Hat schon mal jemand geschafft, auf einem
