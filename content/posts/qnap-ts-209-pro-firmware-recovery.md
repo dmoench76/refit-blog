@@ -130,3 +130,12 @@ die Verwechslung zwischen verschiedenen Firmware-Formaten für denselben
 Recovery-Zweck. Ein bisschen Foren-Archäologie und ein echtes
 Windows-System für die herstellereigenen Tools waren am Ende
 zielführender als jeder Emulationsversuch.
+
+## Offene Frage: Alternative Firmware oder echtes Linux?
+
+Die originale QTS-Firmware läuft jetzt – aber das ist nur die halbe
+Miete für so alte Hardware. Hat schon mal jemand geschafft, auf einem
+TS-209 Pro eine alternative Firmware oder ein vollwertiges Linux zum
+Laufen zu bringen (Debian, OpenWrt, irgendein minimaler Community-Fork)?
+Das wäre mein nächster Schritt – über Hinweise in den Kommentaren freue
+ich mich.
