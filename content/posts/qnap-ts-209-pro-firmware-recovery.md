@@ -101,6 +101,10 @@ vor demselben Problem steht: über die üblichen QNAP-Community-Foren (z. B.
 qnapclub.de) nach *"TS-209 Pro Firmware 3.3.3"* suchen – dort finden sich
 i. d. R. aktuelle, funktionierende Mirror-Links.
 
+Falls die Mirror-Suche bei euch ins Leere läuft: Wir haben die Datei noch
+und helfen im Zweifel gerne weiter – einfach unten in den Kommentaren
+melden.
+
 Zur Verifikation der eigenen heruntergeladenen Datei – das ist exakt die
 Version, die bei uns funktioniert hat:
 
