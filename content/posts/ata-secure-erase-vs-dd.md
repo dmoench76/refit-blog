@@ -1,7 +1,7 @@
 ---
 title: "ATA Secure Erase auf alten Platten: Warum ich beim nächsten Mal einfach dd nehme"
 date: 2026-07-17T18:07:13+02:00
-draft: true
+draft: false
 ---
 
 Eine alte Seagate Barracuda ES.7 mit 750GB sollte ein zweites Leben in
