@@ -363,39 +363,95 @@ rm /tmp/rsync-test.txt
 
 ---
 
-### Task 5: GitHub Actions deploy workflow
+### Task 5: GitHub Actions deploy workflow (self-hosted runner on dmoench-dell)
+
+**Revision note:** the original design in this task called for a GitHub-hosted
+runner (`runs-on: ubuntu-latest`) deploying over SSH/rsync using the
+rrsync-restricted key from Task 4. That was implemented and pushed (commit
+`356ae3f`), but the deploy step failed: GitHub-hosted runners execute in
+GitHub's cloud and have no route to `dmoench-dell` (private LAN hostname,
+RFC1918 address `192.168.178.108`, no public DNS record). Confirmed via
+`dig @1.1.1.1 dmoench-dell` returning empty and the job's own
+`ssh-keyscan` failing before ever reaching rsync. The user chose, when
+presented with the options, to run a **self-hosted GitHub Actions runner
+directly on dmoench-dell** — the runner registers itself with GitHub via
+an outbound-only connection (no inbound firewall changes needed), and
+since it executes ON the deploy target, the "deploy" step becomes a local
+file copy: no SSH key, no secrets, no network hop at all. This makes
+Task 4's rrsync-restricted SSH key and the three `DEPLOY_*` secrets
+unnecessary — this task's last step retires them.
+
+Self-hosted runners on a **public** repo are a known risk when a workflow
+triggers on `pull_request` from forks (a malicious PR could run arbitrary
+code on your runner). This repo's workflow only triggers on `push` to
+`main`, and this is a solo repo with no other contributors — that risk
+does not apply here, but do not add `pull_request` triggers to this
+workflow without reconsidering runner placement.
 
 **Files:**
-- Create: `~/refit-blog/.github/workflows/deploy.yml`
+- Create: `~/refit-blog/.github/workflows/deploy.yml` (rewrite — a prior
+  version targeting `ubuntu-latest` was already committed as `356ae3f`;
+  this replaces it with a new commit, not an amend)
+- Create (on dmoench-dell): `/opt/actions-runner/` (GitHub Actions runner
+  install, running as a systemd service under user `dmoench`)
 
 **Interfaces:**
-- Consumes: deploy SSH key from Task 4 Step 2, deploy target `/srv/refit-blog/public/` on dmoench-dell
-- Produces: automatic build+deploy on every push to `main`
+- Consumes: deploy target `/srv/refit-blog/public/` on dmoench-dell
+  (already exists from Task 4, owned by `dmoench`)
+- Produces: automatic build+deploy on every push to `main`, executed
+  entirely on dmoench-dell
 
-- [ ] **Step 1: Register the deploy key and host info as GitHub Actions secrets**
+- [ ] **Step 1: Get a runner registration token and the latest runner release URL**
 
 ```bash
 cd ~/refit-blog
-gh secret set DEPLOY_SSH_KEY < /tmp/refit-blog-deploy-key
-gh secret set DEPLOY_HOST --body "dmoench-dell"
-gh secret set DEPLOY_USER --body "dmoench"
+REG_TOKEN=$(gh api -X POST repos/dmoench76/refit-blog/actions/runners/registration-token --jq .token)
+echo "token acquired: ${REG_TOKEN:0:8}..." # do not print the full token
+RUNNER_VERSION=$(gh api repos/actions/runner/releases/latest --jq .tag_name | sed 's/^v//')
+echo "latest runner version: $RUNNER_VERSION"
 ```
 
-Expected: `✓ Set Actions secret DEPLOY_SSH_KEY for dmoench76/refit-blog` (x3)
+Expected: both variables populated (token is short-lived, ~1 hour — use it
+promptly in Step 2). Do not log the full `$REG_TOKEN` value anywhere
+(report file included) — treat it like a credential, since anyone holding
+it can register a runner against this repo until it expires or is used.
 
-- [ ] **Step 2: Shred the local copy of the private key (it's now only in GitHub Secrets + dmoench-dell's authorized_keys)**
+- [ ] **Step 2: Install and register the runner on dmoench-dell**
 
 ```bash
-shred -u /tmp/refit-blog-deploy-key
+ssh dmoench-dell "sudo mkdir -p /opt/actions-runner && sudo chown dmoench:dmoench /opt/actions-runner"
+ssh dmoench-dell "cd /opt/actions-runner && curl -o actions-runner.tar.gz -L https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz && tar xzf actions-runner.tar.gz && rm actions-runner.tar.gz"
+ssh dmoench-dell "cd /opt/actions-runner && ./config.sh --url https://github.com/dmoench76/refit-blog --token '${REG_TOKEN}' --name dmoench-dell --labels dmoench-dell --work _work --unattended --replace"
 ```
 
-Expected: file is removed. Keep `/tmp/refit-blog-deploy-key.pub` for reference or delete it too — the public key is already installed.
+Expected: `config.sh` prints `√ Connected to GitHub` and
+`√ Runner successfully added` / `√ Runner connection is good`. Run as
+user `dmoench` (not root) — the runner explicitly refuses to run
+`config.sh` as root by default, which is the correct, safer behavior; do
+not work around this with `--unattended` root flags.
 
-- [ ] **Step 3: Write the workflow file**
+- [ ] **Step 3: Install the runner as a persistent systemd service**
 
-The deploy key installed in Task 4 is restricted via `rrsync -wo /srv/refit-blog/public/`, which anchors and re-prepends that directory itself. Task 4's verification found that passing any path after the host (e.g. `dmoench-dell:/srv/refit-blog/public/`) doubles the path and fails with a nested-mkdir error — the correct destination is a **bare `host:` with no path**, relying on the key's built-in restriction to anchor the write. Third-party rsync-deploy GitHub Actions (e.g. `burnett01/rsync-deployments`) require a non-empty `remote_path` input, which would reintroduce this bug — so this step invokes `rsync` directly instead, giving full control over the destination argument.
+```bash
+ssh dmoench-dell "cd /opt/actions-runner && sudo ./svc.sh install dmoench && sudo ./svc.sh start"
+ssh dmoench-dell "sudo ./opt/actions-runner/svc.sh status 2>/dev/null || sudo /opt/actions-runner/svc.sh status"
+```
 
-Create `~/refit-blog/.github/workflows/deploy.yml`:
+Expected: service status shows `active (running)`. This makes the runner
+start automatically on boot and survive this SSH session ending.
+
+- [ ] **Step 4: Verify the runner is registered and online**
+
+```bash
+gh api repos/dmoench76/refit-blog/actions/runners --jq '.runners[] | {name, status, labels: [.labels[].name]}'
+```
+
+Expected: one entry, `"name": "dmoench-dell"`, `"status": "online"`,
+labels including `dmoench-dell`.
+
+- [ ] **Step 5: Rewrite the workflow file to target the self-hosted runner with a local deploy step**
+
+Overwrite `~/refit-blog/.github/workflows/deploy.yml`:
 
 ```yaml
 name: Build and deploy
@@ -406,7 +462,7 @@ on:
 
 jobs:
   build-deploy:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, dmoench-dell]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -422,45 +478,63 @@ jobs:
       - name: Build
         run: hugo --minify
 
-      - name: Deploy via rsync
-        env:
-          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-        run: |
-          install -m 600 -D /dev/null ~/.ssh/deploy_key
-          echo "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
-          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          rsync -avz --delete -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes" \
-            public/ "$DEPLOY_USER@$DEPLOY_HOST:"
+      - name: Deploy (local copy)
+        run: rsync -a --delete public/ /srv/refit-blog/public/
 ```
 
-Note the trailing colon with nothing after it on the destination (`"$DEPLOY_USER@$DEPLOY_HOST:"`) — this is required by the rrsync restriction, not an omission. The trailing slash on the source (`public/`) means rsync copies the *contents* of `public/` rather than the directory itself, matching the plain-file layout `/srv/refit-blog/public/` already has.
+No secrets, no SSH, no network hop — the runner executes this directly on
+dmoench-dell, so "deploy" is just copying files into the directory nginx
+already serves.
 
-- [ ] **Step 4: Commit and push to trigger the first automated deploy**
+- [ ] **Step 6: Commit and push**
 
 ```bash
 cd ~/refit-blog
 git add .github/
-git commit -m "Add GitHub Actions build+deploy workflow"
+git commit -m "Switch deploy workflow to self-hosted runner on dmoench-dell"
 git push
 ```
 
-- [ ] **Step 5: Watch the run and verify success**
+Note: `origin` for this repo was already changed to
+`git@github.com:dmoench76/refit-blog.git` (SSH) during the earlier attempt,
+because pushing changes under `.github/workflows/` requires `workflow`
+scope that the cached `gh` OAuth token over HTTPS did not have. The SSH
+remote works and needs no further action — do not switch it back to HTTPS
+for this push.
+
+- [ ] **Step 7: Watch the run and verify success**
 
 ```bash
 gh run watch --exit-status
 ```
 
-Expected: exits 0, log shows `Deploy via rsync` step succeeded
+Expected: exits 0, log shows `Deploy (local copy)` step succeeded
 
-- [ ] **Step 6: Verify the deployed content on dmoench-dell**
+- [ ] **Step 8: Verify the deployed content on dmoench-dell**
 
 ```bash
 curl -s http://192.168.178.108:8080/refit-blog/ | grep -q "refit-blog" && echo OK
 ```
 
 Expected: `OK`
+
+- [ ] **Step 9: Retire the now-unused SSH deploy key and secrets from the abandoned approach**
+
+The rrsync-restricted key (Task 4) and the three `DEPLOY_*` secrets are no
+longer used now that the runner executes locally. Remove them to avoid
+leaving unused credentials around:
+
+```bash
+gh secret delete DEPLOY_SSH_KEY
+gh secret delete DEPLOY_HOST
+gh secret delete DEPLOY_USER
+ssh dmoench-dell "sed -i '/github-actions-refit-blog-deploy/d' ~/.ssh/authorized_keys"
+ssh dmoench-dell "grep -c github-actions-refit-blog-deploy ~/.ssh/authorized_keys || echo 0"
+rm -f /tmp/refit-blog-deploy-key.pub
+```
+
+Expected: `gh secret list` no longer shows the three `DEPLOY_*` secrets;
+the grep count is `0`; the leftover public key file is removed.
 
 ---
 
