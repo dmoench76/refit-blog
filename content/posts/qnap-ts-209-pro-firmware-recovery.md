@@ -27,17 +27,18 @@ mit nur einer Platte bestückt.
 Damit war das Gerät zwar am Leben, aber ohne aktuelle, funktionierende
 QTS-Firmware nicht sinnvoll nutzbar. Also: Firmware besorgen.
 
-## Sackgasse 1: TFTP-Recovery-Modus
+## Vorab geklärt: TFTP-Recovery ist hier nicht das richtige Werkzeug
 
 Ältere QNAP-Modelle bieten einen TFTP-basierten System-Recovery-Modus
 (`192.168.0.10`/`192.168.0.11`, `qnapimg.bin`) für den Fall, dass das
 System gar nicht mehr bootet. Für unseren Fall – Gerät läuft, nur die
-Firmware fehlt – war das der falsche Weg: TFTP-Recovery erwartet ein
-rohes Flash-Image, kein reguläres Firmware-Update-Paket. Genau dieser
-Unterschied hat später auch beim eigentlichen Firmware-Tool für Verwirrung
-gesorgt (siehe unten).
+Firmware fehlt – wäre das der falsche Weg gewesen: TFTP-Recovery erwartet
+ein rohes Flash-Image, kein reguläres Firmware-Update-Paket. Dieser
+Unterschied war der Grund, warum eine erste gefundene Firmware-Datei
+später vom eigentlichen Firmware-Tool abgelehnt wurde (siehe unten) – gut,
+das vorher schon auf dem Schirm zu haben.
 
-## Sackgasse 2: Qfinder Pro unter Wine/Box64
+## Sackgasse: Qfinder Pro unter Wine/Box64
 
 QNAPs eigenes Tool zum Aufspielen der Firmware, Qfinder Pro, gibt es offiziell
 für Windows, macOS und Ubuntu Desktop (18.04+, 32- und 64-Bit) – aber nur für
@@ -63,7 +64,7 @@ zu bekommen war die eigentliche Herausforderung:
 - Die erste gefundene Datei war ein TFTP-Recovery-Image (rohes
   Flash-Image) – Qfinder Pro quittierte das mit: *"Das Format der
   ausgewählten Firmware-Datei stimmt nicht. Bitte überprüfen."* Genau der
-  Unterschied aus Sackgasse 1: TFTP-Image ≠ reguläres Firmware-Paket.
+  Unterschied wie oben beschrieben: TFTP-Image ≠ reguläres Firmware-Paket.
 - Community-Foren (u. a. qnapclub.de) waren der entscheidende Hinweis,
   brachten aber selbst nicht direkt die Datei.
 
