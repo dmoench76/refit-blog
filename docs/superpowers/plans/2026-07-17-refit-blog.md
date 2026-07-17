@@ -15,7 +15,7 @@
 - dmoench-dell LAN IP: `192.168.178.108`, existing project-serving nginx listens on port `8080`
 - dmoench-dell nginx snippets live in `/etc/nginx/snippets/*.conf`, auto-included by `/etc/nginx/sites-enabled/dell.conf`
 - kant21's public HTTPS server block (kant21.spdns.eu) lives in `/etc/nginx/sites-enabled/nextcloud.conf`, NOT kant21-ssl.conf (that file is the LAN-only `kant21.fritz.box` admin vhost — do not touch it for this project)
-- Existing proxy pattern to follow exactly (from nextcloud.conf's `/webmon/` and `/battery/` entries):
+- Existing proxy pattern to follow exactly — **use `/auo`'s pattern, not `/webmon/`'s or `/battery/`'s.** Re-verified directly against the live file before writing this task: `/webmon/` and `/battery/` both carry a `satisfy any; allow <LAN/VPN ranges>; deny all;` block plus `auth_basic` — they're internal admin tools, intentionally restricted. `/auo` (a public WordPress site, no restriction) is the correct precedent, since refit-blog must be publicly reachable with no auth per the design spec ("Öffentlich, für andere Homelab-Bastler"):
   ```nginx
   location ^~ /refit-blog/ {
       proxy_pass http://192.168.178.108:8080/refit-blog/;
@@ -25,6 +25,7 @@
       proxy_set_header X-Forwarded-Proto $scheme;
   }
   ```
+  Do NOT add `satisfy`/`allow`/`deny`/`auth_basic` directives — that would make the blog unreachable to its intended public audience.
 - dmoench-dell snippet pattern to follow exactly (from `/etc/nginx/snippets/battery.conf`):
   ```nginx
   location ^~ /refit-blog/ {
@@ -549,15 +550,22 @@ the grep count is `0`; the leftover public key file is removed.
 
 - [ ] **Step 1: Locate the insertion point**
 
+Use `/auo`'s block as the precedent, not `/webmon/` or `/battery/` — those
+two carry a `satisfy any; allow <LAN/VPN ranges>; deny all;` block plus
+`auth_basic`, which are intentional restrictions for internal admin tools.
+refit-blog must be publicly reachable with no auth (per the design spec),
+so do not copy that restriction.
+
 ```bash
-grep -n "location \^~ /webmon/" /etc/nginx/sites-enabled/nextcloud.conf
+grep -n "location \^~ /auo" /etc/nginx/sites-enabled/nextcloud.conf
 ```
 
-Expected: a line number (insert the new block right after this location's closing `}`)
+Expected: a line number (insert the new block right after this location's closing `}`, i.e. after the `# ENDE WordPress AUO` comment line)
 
 - [ ] **Step 2: Add the proxy location block**
 
-Using the line number from Step 1, insert immediately after the `/webmon/` block's closing brace:
+Using the line number from Step 1, insert after the `/auo` block (and its
+`# ENDE WordPress AUO` comment):
 
 ```nginx
     location ^~ /refit-blog/ {
@@ -568,6 +576,10 @@ Using the line number from Step 1, insert immediately after the `/webmon/` block
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 ```
+
+Do NOT add `satisfy`/`allow`/`deny`/`auth_basic` directives — this block
+must stay open to the public internet, matching `/auo`'s pattern, not
+`/webmon/`'s or `/battery/`'s.
 
 (Use the Edit tool to insert this after the identified line, matching the file's existing indentation.)
 
