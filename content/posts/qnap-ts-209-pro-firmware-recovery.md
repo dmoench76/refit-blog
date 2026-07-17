@@ -47,15 +47,9 @@ mit Box64/Box32-Emulation. Dieser Versuch endete an einer harten Wand:
 `wineboot.exe` scheiterte mit `STATUS_INVALID_IMAGE_FORMAT` (`c000007b`), verursacht durch
 ungelöste Box32-Symbole (u. a. `arc4random`, `strtold`,
 `FT_Get_Transform`, `FcFontSetList`) – ein bekanntes, offenes Problem im
-Box64-Projekt, kein Konfigurationsfehler unsererseits.
-
-Bemerkenswerte Randnotiz aus diesem Versuch: Ein direkter
-`apt-get install wine64:amd64` auf dem produktiv laufenden Host wurde vom
-Paketmanager selbst verweigert (Abhängigkeitskonflikte), bevor irgendetwas
-verändert wurde – der anschließende Versuch lief stattdessen isoliert in
-einem Docker-Container. Am Ende halfen weder das noch weitere
-Debugging-Versuche – die Entscheidung fiel, stattdessen eine echte
-Windows-Maschine zu organisieren.
+Box64-Projekt, kein Konfigurationsfehler unsererseits. Auch weitere
+Debugging-Versuche brachten keinen Fortschritt – die Entscheidung fiel,
+stattdessen eine echte Windows-Maschine zu organisieren.
 
 ## Der eigentliche Engpass: eine funktionierende Firmware-Quelle finden
 
